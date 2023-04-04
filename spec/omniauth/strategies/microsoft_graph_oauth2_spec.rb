@@ -163,6 +163,11 @@ describe OmniAuth::Strategies::MicrosoftGraph do
         @options = { scope: 'profile email,foo,steve yeah http://example.com' }
         expect(subject.authorize_params['scope']).to eq('profile email https://graph.microsoft.com/foo https://graph.microsoft.com/steve https://graph.microsoft.com/yeah http://example.com')
       end
+
+      it 'should prefix non-base scopes with custom graph_url option' do
+        @options = { graph_url: 'https://graph.microsoft.us/' }
+        expect(subject.authorize_params['scope']).to eq('offline_access openid email profile https://graph.microsoft.us/User.Read')
+      end
     end
 
     describe 'state' do
@@ -238,6 +243,17 @@ describe OmniAuth::Strategies::MicrosoftGraph do
       expect(subject.token_params['scope']).to eq('bar')
       expect(subject.token_params['foo']).to eq('baz')
       expect(subject.token_params['bad']).to eq(nil)
+    end
+  end
+
+  describe 'graph_url option' do
+    it 'should have a default' do
+      expect(subject.options.graph_url).to eq('https://graph.microsoft.com/')
+    end
+
+    it 'can override the default' do
+      @options = { graph_url: 'https://graph.microsoft.us/' }
+      expect(subject.options.graph_url).to eq('https://graph.microsoft.us/')
     end
   end
 

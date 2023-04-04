@@ -3,7 +3,6 @@ require 'omniauth-oauth2'
 module OmniAuth
   module Strategies
     class MicrosoftGraph < OmniAuth::Strategies::OAuth2
-      BASE_SCOPE_URL = 'https://graph.microsoft.com/'
       BASE_SCOPES = %w[offline_access openid email profile].freeze
       DEFAULT_SCOPE = 'offline_access openid email profile User.Read'.freeze
 
@@ -22,6 +21,8 @@ module OmniAuth
 
       option :scope, DEFAULT_SCOPE
       option :authorized_client_ids, []
+
+      option :graph_url, 'https://graph.microsoft.com/'
 
       uid { raw_info["id"] }
 
@@ -57,7 +58,7 @@ module OmniAuth
       end     
 
       def raw_info
-        @raw_info ||= access_token.get('https://graph.microsoft.com/v1.0/me').parsed
+        @raw_info ||= access_token.get("#{options.graph_url}v1.0/me").parsed
       end
 
       def callback_url
@@ -109,14 +110,14 @@ module OmniAuth
       def get_scope(params)
         raw_scope = params[:scope] || DEFAULT_SCOPE
         scope_list = raw_scope.split(' ').map { |item| item.split(',') }.flatten
-        scope_list.map! { |s| s =~ %r{^https?://} || BASE_SCOPES.include?(s) ? s : "#{BASE_SCOPE_URL}#{s}" }
+        scope_list.map! { |s| s =~ %r{^https?://} || BASE_SCOPES.include?(s) ? s : "#{options.graph_url}#{s}" }
         scope_list.join(' ')
       end
 
       def verify_token(access_token)
         return false unless access_token
         # access_token.get('https://graph.microsoft.com/v1.0/me').parsed
-        raw_response = client.request(:get, 'https://graph.microsoft.com/v1.0/me',
+        raw_response = client.request(:get, "#{options.graph_url}v1.0/me",
                                       params: { access_token: access_token }).parsed
         (raw_response['aud'] == options.client_id) || options.authorized_client_ids.include?(raw_response['aud'])
       end              
